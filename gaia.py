@@ -71,6 +71,8 @@ wrapper_kwargs = {
 }
 env = make_atari_env("MsPacmanNoFrameskip-v0",NUM_ENVS,ENV_SEED,wrapper_kwargs=wrapper_kwargs)
 
+eval_env = make_atari_env("MsPacmanNoFrameskip-v0",1,ENV_SEED+10)
+
 
 class EvalScoreLogger(callbacks.EvalCallback):
     def __init__(self,path,*args, **kwargs):
@@ -114,7 +116,7 @@ class PBarCallback(callbacks.BaseCallback):
 cb = callbacks.CallbackList([
     PBarCallback(TRAIN_LENGHT),
     callbacks.CheckpointCallback(save_freq=10_000,save_path="./checkpoints/",name_prefix=MODEL_NAME),
-    EvalScoreLogger('eval_score.csv',env,
+    EvalScoreLogger('eval_score.csv',eval_env,
                     eval_freq=EVAL_FREQUENCY,
                     n_eval_episodes = EVAL_EPISODES,
                     best_model_save_path="./best/",
