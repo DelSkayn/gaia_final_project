@@ -3,7 +3,7 @@
 
 # # Hyper parameters
 
-# In[1]:
+# In[ ]:
 
 
 METHOD = "DQN" # or "PPO"
@@ -48,7 +48,7 @@ EVAL_FREQUENCY = 10_000
 EVAL_EPISODES = 10
 
 
-# In[2]:
+# In[ ]:
 
 
 # Setting up the environment if on colab
@@ -66,7 +66,7 @@ if IN_COLAB:
     os.chdir('/content/drive/My Drive/CHANGE_THIS')
 
 
-# In[9]:
+# In[ ]:
 
 
 from stable_baselines.deepq.policies import MlpPolicy as DQNMlpPolicy, CnnPolicy as DQNCnnPolicy
@@ -87,26 +87,6 @@ wrapper_kwargs = {
 env = make_atari_env("MsPacmanNoFrameskip-v0",NUM_ENVS,ENV_SEED,wrapper_kwargs=wrapper_kwargs)
 
 eval_env = make_atari_env("MsPacmanNoFrameskip-v0",1,ENV_SEED+10,wrapper_kwargs={'frame_stack':FRAME_STACK})
-
-
-class EvalScoreLogger(callbacks.EvalCallback):
-    def __init__(self,path,*args, **kwargs):
-        super(EvalScoreLogger, self).__init__(*args,**kwargs)
-        self.file_path = path
-    
-    def _on_training_start(self):
-        self.log_file = open(self.file_path,"w")
-        
-    def _on_step(self):
-        super(EvalScoreLogger,self)._on_step()
-        if self.eval_freq > 0 and self.n_calls % self.eval_freq == 0:
-            time_steps = self.n_calls
-            self.log_file.write("{},{}\n".format(time_steps,self.last_mean_reward))
-            self.log_file.flush()
-        
-    def _on_training_end(self):
-        self.log_file.close()
-        
 
 class PBarCallback(callbacks.BaseCallback):
     def __init__(self,verbose=0):
@@ -131,7 +111,7 @@ class PBarCallback(callbacks.BaseCallback):
 cb = callbacks.CallbackList([
     PBarCallback(TRAIN_LENGHT),
     callbacks.CheckpointCallback(save_freq=10_000,save_path="./checkpoints/",name_prefix=MODEL_NAME),
-    EvalScoreLogger('eval_score.csv',eval_env,
+    callbacks.EvalCallback(eval_env,log_path='./logs/',
                            eval_freq=EVAL_FREQUENCY,
                            n_eval_episodes = EVAL_EPISODES,
                            best_model_save_path="./best/",
@@ -159,7 +139,7 @@ if LOAD_MODEL:
     model.load(LOAD_NAME,env)
 
 
-# In[ ]:
+# In[5]:
 
 
 model.learn(TRAIN_LENGHT,callback=cb)
