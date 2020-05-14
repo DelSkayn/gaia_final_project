@@ -3,7 +3,7 @@
 
 # # Hyper parameters
 
-# In[ ]:
+# In[1]:
 
 
 METHOD = "DQN" # or "PPO"
@@ -17,7 +17,7 @@ POLICY = "CNN" # or "MLP"
 # If true shows an agent 4 frames instead of 1
 # Allows an agent to determin velocity and movement direction when learning from pixels
 # Not a default hyper-param but should probably be used
-FRAME_STACK = True
+FRAME_STACK = True 
 
 # If true a episode is reset apon losing a life instead of losing all lifes
 # Used in the deepmind papers
@@ -35,7 +35,7 @@ DQN_BUFFER_SIZE = 200_000
 DQN_TRAIN_FREQ = 2
 # Number of initial random frames
 DQN_LEARNING_STARTS = 10_000
-# Number of frames between updating the target network
+# Number of frames between updating the target network 
 DQN_TARGET_NETWORK_UPDATE_FREQ = 10_000
 
 MODEL_NAME = "model_{}_{}_{}".format(METHOD,POLICY,TRAIN_LENGHT)
@@ -48,18 +48,33 @@ EVAL_FREQUENCY = 10_000
 EVAL_EPISODES = 10
 
 
-# In[ ]:
+# In[2]:
 
 
-# In[ ]:
+# Setting up the environment if on colab
+try:
+    import google.colab
+    import os
+    get_ipython().run_line_magic('tensorflow_version', '1.15')
+    IN_COLAB = True
+except:
+    IN_COLAB = False
+
+if IN_COLAB:
+    get_ipython().system('pip install stable-baselines gym[atari] tqdm')
+    colab.drive.mount('/content/drive')
+    os.chdir('/content/drive/My Drive/CHANGE_THIS')
+
+
+# In[9]:
 
 
 from stable_baselines.deepq.policies import MlpPolicy as DQNMlpPolicy, CnnPolicy as DQNCnnPolicy
-from stable_baselines.common.policies import MlpPolicy, CnnPolicy
+from stable_baselines.common.policies import MlpPolicy, CnnPolicy 
 from stable_baselines.common.cmd_util import make_atari_env
 from stable_baselines.common import callbacks
 from stable_baselines import DQN, PPO2
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 
 
 if METHOD == "DQN":
@@ -71,56 +86,56 @@ wrapper_kwargs = {
 }
 env = make_atari_env("MsPacmanNoFrameskip-v0",NUM_ENVS,ENV_SEED,wrapper_kwargs=wrapper_kwargs)
 
-eval_env = make_atari_env("MsPacmanNoFrameskip-v0",1,ENV_SEED+10)
+eval_env = make_atari_env("MsPacmanNoFrameskip-v0",1,ENV_SEED+10,wrapper_kwargs={'frame_stack':FRAME_STACK})
 
 
 class EvalScoreLogger(callbacks.EvalCallback):
     def __init__(self,path,*args, **kwargs):
         super(EvalScoreLogger, self).__init__(*args,**kwargs)
         self.file_path = path
-
+    
     def _on_training_start(self):
         self.log_file = open(self.file_path,"w")
-
+        
     def _on_step(self):
         super(EvalScoreLogger,self)._on_step()
         if self.eval_freq > 0 and self.n_calls % self.eval_freq == 0:
             time_steps = self.n_calls
             self.log_file.write("{},{}\n".format(time_steps,self.last_mean_reward))
             self.log_file.flush()
-
+        
     def _on_training_end(self):
         self.log_file.close()
-
+        
 
 class PBarCallback(callbacks.BaseCallback):
     def __init__(self,verbose=0):
         super(PBarCallback, self).__init__(verbose)
         self.pbar = None
-
+        
     def _on_training_start(self):
         self.pbar = tqdm(total=self.locals['total_timesteps'])
-
+        
     def _on_step(self):
         self.pbar.n = self.n_calls
         self.pbar.update(0)
         return True
-
+        
     def _on_training_end(self):
         self.pbar.n = self.n_calls
         self.pbar.update(0)
         self.pbar.close()
-
+        
 #eval_log = open("eval_log.csv","w")
 
 cb = callbacks.CallbackList([
     PBarCallback(TRAIN_LENGHT),
     callbacks.CheckpointCallback(save_freq=10_000,save_path="./checkpoints/",name_prefix=MODEL_NAME),
     EvalScoreLogger('eval_score.csv',eval_env,
-                    eval_freq=EVAL_FREQUENCY,
-                    n_eval_episodes = EVAL_EPISODES,
-                    best_model_save_path="./best/",
-                    verbose=1)
+                           eval_freq=EVAL_FREQUENCY,
+                           n_eval_episodes = EVAL_EPISODES,
+                           best_model_save_path="./best/",
+                           verbose=1)
 ])
 
 if METHOD == "DQN":
@@ -139,7 +154,7 @@ else:
         'learning_rate': LEARNING_RATE,
     }
     model = PPO2(policy,env,**params)
-
+    
 if LOAD_MODEL:
     model.load(LOAD_NAME,env)
 
@@ -152,3 +167,7 @@ model.save(MODEL_NAME)
 
 
 # In[ ]:
+
+
+
+
